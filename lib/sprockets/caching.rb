@@ -1,3 +1,5 @@
+require 'benchmark'
+
 module Sprockets
   # `Caching` is an internal mixin whose public methods are exposed on
   # the `Environment` and `Index` classes.
@@ -48,14 +50,21 @@ module Sprockets
       def cache_asset(path)
         # If `cache` is not set, return fast
         if cache.nil?
-          yield
+          puts 'NO CACHE SET'
+          return yield 
+        end
 
         # Check cache for `path`
-        elsif (asset = Asset.from_hash(self, cache_get_hash(path.to_s))) && asset.fresh?(self)
-          asset
+        asset = nil
+        time = Benchmark.realtime { (asset = Asset.from_hash(self, cache_get_hash(path.to_s))) && asset.fresh?(self) }
+        puts "CACHE #{asset ? :hit : :miss} in #{time} #{path}"
+
+        return asset if asset
 
          # Otherwise yield block that slowly finds and builds the asset
-        elsif asset = yield
+        time = Benchmark.realtime { asset = yield }
+        puts "BUILD in #{time} #{path}"
+        
           hash = {}
           asset.encode_with(hash)
 
@@ -69,7 +78,6 @@ module Sprockets
           end
 
           asset
-        end
       end
 
     private
@@ -81,7 +89,19 @@ module Sprockets
       end
 
       def cache_get_hash(key)
-        hash = cache_get(expand_cache_key(key))
+        hash = nil
+        time = Benchmark.realtime do
+          hash = cache_get(expand_cache_key(key))
+        end
+
+        if !hash
+          puts "[MISS] #{key} in #{time}"
+        elsif digest.hexdigest != hash['_version']
+          puts "[STALE] #{key} in #{time}"
+        else
+          puts "[HIT] #{key} in #{time}"
+        end
+
         if hash.is_a?(Hash) && digest.hexdigest == hash['_version']
           hash
         end
