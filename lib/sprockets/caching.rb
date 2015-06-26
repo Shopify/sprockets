@@ -57,13 +57,13 @@ module Sprockets
         # Check cache for `path`
         asset = nil
         time = Benchmark.realtime { (asset = Asset.from_hash(self, cache_get_hash(path.to_s))) && asset.fresh?(self) }
-        puts "CACHE #{asset ? :hit : :miss} in #{time} #{path}"
+        puts "CACHE #{asset ? :hit : :miss} in #{(time * 1000).round(1)}ms #{path}"
 
         return asset if asset
 
          # Otherwise yield block that slowly finds and builds the asset
         time = Benchmark.realtime { asset = yield }
-        puts "BUILD in #{time} #{path}"
+        puts "BUILD in #{(time * 1000).round(1)}ms #{path}"
         
           hash = {}
           asset.encode_with(hash)
@@ -92,14 +92,6 @@ module Sprockets
         hash = nil
         time = Benchmark.realtime do
           hash = cache_get(expand_cache_key(key))
-        end
-
-        if !hash
-          puts "[MISS] #{key} in #{time}"
-        elsif digest.hexdigest != hash['_version']
-          puts "[STALE] #{key} in #{time}"
-        else
-          puts "[HIT] #{key} in #{time}"
         end
 
         if hash.is_a?(Hash) && digest.hexdigest == hash['_version']
