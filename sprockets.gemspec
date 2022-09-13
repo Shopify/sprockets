@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.executables = ["sprockets"]
 
   s.add_dependency "base64"
-  s.add_dependency "rack",            "> 1", "< 3"
+  s.add_dependency "rack",            ">= 2.2.4", "< 4"
   s.add_dependency "concurrent-ruby", "~> 1.0"
 
   s.add_development_dependency "closure-compiler", "~> 1.1"
@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "execjs", "~> 2.0"
   s.add_development_dependency "minitest", "~> 5.0"
   s.add_development_dependency "nokogiri", "~> 1.3"
-  s.add_development_dependency "rack-test", "~> 0.6"
+  s.add_development_dependency "rack-test", "~> 2.0.0"
   s.add_development_dependency "rake"
   s.add_development_dependency "sass", "~> 3.1"
   s.add_development_dependency "uglifier", "~> 2.3"

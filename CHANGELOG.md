@@ -1,3 +1,5 @@
+* Add support for Rack 3.0. Headers set by sprockets will now be lower case. [#758](https://github.com/rails/sprockets/pull/758)
+
 **3.7.5** (Sept 19, 2024)
 
 * Fix `Sprockets::Base#unescape` #808.

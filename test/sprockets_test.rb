@@ -2,6 +2,7 @@ require "minitest/autorun"
 require "sprockets"
 require "sprockets/environment"
 require "fileutils"
+require "rack/lint"
 
 old_verbose, $VERBOSE = $VERBOSE, false
 Encoding.default_external = 'UTF-8'
@@ -205,4 +206,3 @@ module Sprockets
     end
   end
 end
-
