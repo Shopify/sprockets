@@ -1,11 +1,21 @@
 require 'time'
-require 'rack/utils'
+require 'rack'
 
 module Sprockets
   # `Server` is a concern mixed into `Environment` and
   # `CachedEnvironment` that provides a Rack compatible `call`
   # interface and url generation helpers.
   module Server
+    # :stopdoc:
+    if Gem::Version.new(Rack::RELEASE) < Gem::Version.new("3")
+      X_CASCADE = "X-Cascade"
+      VARY = "Vary"
+    else
+      X_CASCADE = "x-cascade"
+      VARY = "vary"
+    end
+    # :startdoc:
+
     # `call` implements the Rack 1.x specification which accepts an
     # `env` Hash and returns a three item tuple with the status code,
     # headers, and body.
@@ -139,30 +149,30 @@ module Sprockets
       # Returns a 403 Forbidden response tuple
       def forbidden_response(env)
         if head_request?(env)
-          [ 403, { "content-type" => "text/plain", "content-length" => "0" }, [] ]
+          [ 403, { Rack::CONTENT_TYPE => "text/plain", Rack::CONTENT_LENGTH => "0" }, [] ]
         else
-          [ 403, { "content-type" => "text/plain", "content-length" => "9" }, [ "Forbidden" ] ]
+          [ 403, { Rack::CONTENT_TYPE => "text/plain", Rack::CONTENT_LENGTH => "9" }, [ "Forbidden" ] ]
         end
       end
 
       # Returns a 404 Not Found response tuple
       def not_found_response(env)
         if head_request?(env)
-          [ 404, { "content-type" => "text/plain", "content-length" => "0", "x-cascade" => "pass" }, [] ]
+          [ 404, { Rack::CONTENT_TYPE => "text/plain", Rack::CONTENT_LENGTH => "0", X_CASCADE => "pass" }, [] ]
         else
-          [ 404, { "content-type" => "text/plain", "content-length" => "9", "x-cascade" => "pass" }, [ "Not found" ] ]
+          [ 404, { Rack::CONTENT_TYPE => "text/plain", Rack::CONTENT_LENGTH => "9", X_CASCADE => "pass" }, [ "Not found" ] ]
         end
       end
 
       def method_not_allowed_response
-        [ 405, { "content-type" => "text/plain", "content-length" => "18" }, [ "Method Not Allowed" ] ]
+        [ 405, { Rack::CONTENT_TYPE => "text/plain", Rack::CONTENT_LENGTH => "18" }, [ "Method Not Allowed" ] ]
       end
 
       def precondition_failed_response(env)
         if head_request?(env)
-          [ 412, { "content-type" => "text/plain", "content-length" => "0", "x-cascade" => "pass" }, [] ]
+          [ 412, { Rack::CONTENT_TYPE => "text/plain", Rack::CONTENT_LENGTH => "0", X_CASCADE => "pass" }, [] ]
         else
-          [ 412, { "content-type" => "text/plain", "content-length" => "19", "x-cascade" => "pass" }, [ "Precondition Failed" ] ]
+          [ 412, { Rack::CONTENT_TYPE => "text/plain", Rack::CONTENT_LENGTH => "19", X_CASCADE => "pass" }, [ "Precondition Failed" ] ]
         end
       end
 
@@ -171,7 +181,7 @@ module Sprockets
       def javascript_exception_response(exception)
         err  = "#{exception.class.name}: #{exception.message}\n  (in #{exception.backtrace[0]})"
         body = "throw Error(#{err.inspect})"
-        [ 200, { "content-type" => "application/javascript", "content-length" => body.bytesize.to_s }, [ body ] ]
+        [ 200, { Rack::CONTENT_TYPE => "application/javascript", Rack::CONTENT_LENGTH => body.bytesize.to_s }, [ body ] ]
       end
 
       # Returns a CSS response that hides all elements on the page and
@@ -224,7 +234,7 @@ module Sprockets
           }
         CSS
 
-        [ 200, { "content-type" => "text/css; charset=utf-8", "content-length" => body.bytesize.to_s }, [ body ] ]
+        [ 200, { Rack::CONTENT_TYPE => "text/css; charset=utf-8", Rack::CONTENT_LENGTH => body.bytesize.to_s }, [ body ] ]
       end
 
       # Escape special characters for use inside a CSS content("...") string
@@ -245,18 +255,18 @@ module Sprockets
         headers = {}
 
         # Set caching headers
-        headers["cache-control"] = "public"
-        headers["etag"]          = %("#{etag}")
+        headers[Rack::CACHE_CONTROL] = "public"
+        headers[Rack::ETAG]          = %("#{etag}")
 
         # If the request url contains a fingerprint, set a long
         # expires on the response
         if path_fingerprint(env["PATH_INFO"])
-          headers["cache-control"] += ", max-age=31536000"
+          headers[Rack::CACHE_CONTROL] += ", max-age=31536000"
 
         # Otherwise set `must-revalidate` since the asset could be modified.
         else
-          headers["cache-control"] += ", must-revalidate"
-          headers["vary"] = "Accept-Encoding"
+          headers[Rack::CACHE_CONTROL] += ", must-revalidate"
+          headers[VARY] = "Accept-Encoding"
         end
 
         headers
@@ -266,7 +276,7 @@ module Sprockets
         headers = {}
 
         # Set content length header
-        headers["content-length"] = length.to_s
+        headers[Rack::CONTENT_LENGTH] = length.to_s
 
         # Set content type header
         if type = asset.content_type
@@ -274,7 +284,7 @@ module Sprockets
           if type.start_with?("text/") && asset.charset
             type += "; charset=#{asset.charset}"
           end
-          headers["content-type"] = type
+          headers[Rack::CONTENT_TYPE] = type
         end
 
         headers.merge(cache_headers(env, asset.etag))

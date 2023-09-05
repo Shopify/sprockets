@@ -1,3 +1,4 @@
+* Fix compatibility with Rack 2 applications. [#790](https://github.com/rails/sprockets/pull/790)
 * Add support for Rack 3.0. Headers set by sprockets will now be lower case. [#758](https://github.com/rails/sprockets/pull/758)
 
 **3.7.5** (Sept 19, 2024)
